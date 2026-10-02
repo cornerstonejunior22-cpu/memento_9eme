@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memento 9ème AF</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2196F3">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; text-align: center; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; }
+    h1 { color: #1976D2; }
+    input { width: 80%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+    button { width: 85%; padding: 12px; background-color: #2196F3; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
+    button:hover { background-color: #0b7dda; }
+    .content { display: none; text-align: left; }
+    .item { background: #e3f2fd; margin: 10px 0; padding: 15px; border-radius: 8px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <div class="card" id="login-screen">
+    <h1>Memento 9ème AF</h1>
+    <p>Antre kòd daksè ou pou w kòmanse</p>
+    <input type="text" id="access-code" placeholder="Kòd daksè">
+    <br>
+    <button onclick="verifyCode()">KONEKTE</button>
+    <p id="error-msg" style="color: red; margin-top: 10px;"></p>
+  </div>
+
+  <div class="card content" id="home-screen">
+    <h1>Memento 9ème AF</h1>
+    <p><strong>Pwogram Etid yo:</strong></p>
+    <div class="item">📐 Mathématiques (Algèbre & Géométrie)</div>
+    <div class="item">🔬 Physique & Chimie (Formules)</div>
+    <div class="item">📖 Français & Communication</div>
+  </div>
+
+  <script>
+    function verifyCode() {
+      const code = document.getElementById('access-code').value.trim();
+      if (code === "") {
+        document.getElementById('error-msg').innerText = "Svp rantre yon kòd daksè.";
+      } else {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('home-screen').style.display = 'block';
+      }
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>

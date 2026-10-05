@@ -13,6 +13,17 @@
     button:hover { background-color: #1b5e20; }
     .hidden { display: none !important; }
     
+    .stats-bar {
+      background-color: #e8f5e9;
+      color: #1b5e20;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 15px;
+      border: 1px solid #c8e6c9;
+    }
+
     .question-card {
       background: #ffffff;
       border-radius: 10px;
@@ -36,7 +47,7 @@
 </head>
 <body>
 
-  <!-- Ekran koneksyon -->
+  <!-- Écran de connexion -->
   <div class="card" id="login-screen">
     <h2>Memento 9ème AF</h2>
     <p>Antre kòd daksè ou pou w kòmanse</p>
@@ -46,12 +57,11 @@
     <p id="error-msg" style="color: red; margin-top: 10px;"></p>
   </div>
 
-  <!-- Ekran prensipal -->
+  <!-- Écran principal -->
   <div class="hidden" id="home-screen">
     <h2>Memento 9ème AF</h2>
-    <div id="memento-container">
-      <p style="text-align:center;">Chajman kesyon yo...</p>
-    </div>
+    <div id="stats-info" class="stats-bar">Chajman total kesyon yo...</div>
+    <div id="memento-container"></div>
   </div>
 
   <script>
@@ -81,14 +91,11 @@
 
     async function chajeQuestions() {
       const container = document.getElementById('memento-container');
+      const stats = document.getElementById('stats-info');
       
       try {
-        // Chèche nan "questions", "questions " (ak espas), ak "Questions"
         let snapshot = await db.collection("questions").get();
-        
-        if (snapshot.empty) {
-          snapshot = await db.collection("questions ").get();
-        }
+
         if (snapshot.empty) {
           snapshot = await db.collection("Questions").get();
         }
@@ -96,22 +103,31 @@
         container.innerHTML = '';
 
         if (snapshot.empty) {
+          stats.innerText = "Total : 0 kesyon jwenn.";
           container.innerHTML = '<p style="text-align:center;">Pa gen kesyon pou kounye a.</p>';
           return;
         }
+
+        stats.innerText = `Total : ${snapshot.size} kesyon chaje ak siksè.`;
 
         snapshot.forEach((doc) => {
           const data = doc.data();
           const card = document.createElement('div');
           card.className = 'question-card';
 
+          // Vérification flexible des noms de champs (compatibilité)
+          const qText = data.questionText || data.question || data.titre || doc.id;
+          const aText = data.answerText || data.reponse || data.answer || 'Repons pa disponib';
+          const subj = data.subject || data.matiere || '';
+          const chap = data.chapter || data.chapitre || '';
+
           card.innerHTML = `
             <div class="badge-info">
-              ${data.subject ? `<span class="subject-badge">${data.subject}</span>` : ''}
-              ${data.chapter ? `<span class="chapter-badge">${data.chapter}</span>` : ''}
+              ${subj ? `<span class="subject-badge">${subj}</span>` : ''}
+              ${chap ? `<span class="chapter-badge">${chap}</span>` : ''}
             </div>
-            <h3 class="question-title">${data.questionText || doc.id}</h3>
-            <p class="answer-text">${data.answerText || 'Repons pa disponib'}</p>
+            <h3 class="question-title">${qText}</h3>
+            <p class="answer-text">${aText}</p>
             
             ${data.audioUrl && data.audioUrl.trim() !== "" ? `
               <div class="audio-player">
@@ -128,6 +144,7 @@
 
       } catch (error) {
         console.error("Erè Firestore :", error);
+        stats.innerText = "Erè nan chajman.";
         container.innerHTML = '<p style="text-align:center; color:red;">Erè nan chaje done yo.</p>';
       }
     }

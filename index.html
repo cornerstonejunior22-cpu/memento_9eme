@@ -60,7 +60,7 @@
   <!-- Écran principal -->
   <div class="hidden" id="home-screen">
     <h2>Memento 9ème AF</h2>
-    <div id="stats-info" class="stats-bar">Chajman total kesyon yo...</div>
+    <div id="stats-info" class="stats-bar">N ap chaje kantite kesyon yo...</div>
     <div id="memento-container"></div>
   </div>
 
@@ -94,28 +94,40 @@
       const stats = document.getElementById('stats-info');
       
       try {
-        let snapshot = await db.collection("questions").get();
+        // Chargement simultané de toutes les collections possibles
+        const collectionsToTry = ["questions", "Questions", "questions "];
+        let allDocs = [];
+        let seenIds = new Set();
 
-        if (snapshot.empty) {
-          snapshot = await db.collection("Questions").get();
+        for (const colName of collectionsToTry) {
+          try {
+            const snap = await db.collection(colName).get();
+            snap.forEach(doc => {
+              if (!seenIds.has(doc.id)) {
+                seenIds.add(doc.id);
+                allDocs.push(doc);
+              }
+            });
+          } catch(e) {
+            console.log("Erreur chargement " + colName, e);
+          }
         }
 
         container.innerHTML = '';
 
-        if (snapshot.empty) {
-          stats.innerText = "Total : 0 kesyon jwenn.";
+        if (allDocs.length === 0) {
+          stats.innerText = "Sistèm nan jwenn : 0 kesyon.";
           container.innerHTML = '<p style="text-align:center;">Pa gen kesyon pou kounye a.</p>';
           return;
         }
 
-        stats.innerText = `Total : ${snapshot.size} kesyon chaje ak siksè.`;
+        stats.innerText = `Total : ${allDocs.length} kesyon chaje ak siksè!`;
 
-        snapshot.forEach((doc) => {
+        allDocs.forEach((doc) => {
           const data = doc.data();
           const card = document.createElement('div');
           card.className = 'question-card';
 
-          // Vérification flexible des noms de champs (compatibilité)
           const qText = data.questionText || data.question || data.titre || doc.id;
           const aText = data.answerText || data.reponse || data.answer || 'Repons pa disponib';
           const subj = data.subject || data.matiere || '';
@@ -144,7 +156,7 @@
 
       } catch (error) {
         console.error("Erè Firestore :", error);
-        stats.innerText = "Erè nan chajman.";
+        stats.innerText = "Erè pandan chajman an.";
         container.innerHTML = '<p style="text-align:center; color:red;">Erè nan chaje done yo.</p>';
       }
     }

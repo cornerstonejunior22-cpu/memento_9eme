@@ -5,22 +5,103 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Memento 9ème AF</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2196F3">
+  <meta name="theme-color" content="#2e7d32">
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; text-align: center; }
-    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; }
-    h1 { color: #1976D2; }
-    input { width: 80%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
-    button { width: 85%; padding: 12px; background-color: #2196F3; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
-    button:hover { background-color: #0b7dda; }
-    .content { display: none; text-align: left; }
-    .item { background: #e3f2fd; margin: 10px 0; padding: 15px; border-radius: 8px; font-weight: bold; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background-color: #f4f6f8;
+      color: #333;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      max-width: 400px;
+      margin: 20px auto;
+      text-align: center;
+    }
+    h1, h2 { color: #1b5e20; margin-bottom: 10px; }
+    input {
+      width: 85%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button {
+      width: 90%;
+      padding: 12px;
+      background-color: #2e7d32;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover { background-color: #1b5e20; }
+    .hidden { display: none !important; }
+    
+    /* Style pou lis kesyon Firebase yo */
+    .question-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 15px;
+      margin: 12px 0;
+      text-align: left;
+      border-left: 5px solid #2e7d32;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .badge-info {
+      display: flex;
+      gap: 6px;
+      font-size: 0.75rem;
+      margin-bottom: 6px;
+    }
+    .subject-badge {
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: bold;
+    }
+    .chapter-badge {
+      background: #fff3e0;
+      color: #e65100;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .question-title {
+      font-size: 1rem;
+      color: #1b5e20;
+      margin: 6px 0;
+    }
+    .answer-text {
+      font-size: 0.95rem;
+      color: #424242;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+    .audio-player audio {
+      width: 100%;
+      height: 36px;
+      margin-top: 6px;
+    }
   </style>
+
+  <!-- Firebase Web SDK (v9 Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
+  <!-- Ekran pou antre kòd aksè -->
   <div class="card" id="login-screen">
-    <h1>Memento 9ème AF</h1>
+    <h2>Memento 9ème AF</h2>
     <p>Antre kòd daksè ou pou w kòmanse</p>
     <input type="text" id="access-code" placeholder="Kòd daksè">
     <br>
@@ -28,23 +109,81 @@
     <p id="error-msg" style="color: red; margin-top: 10px;"></p>
   </div>
 
-  <div class="card content" id="home-screen">
-    <h1>Memento 9ème AF</h1>
-    <p><strong>Pwogram Etid yo:</strong></p>
-    <div class="item">📐 Mathématiques (Algèbre & Géométrie)</div>
-    <div class="item">🔬 Physique & Chimie (Formules)</div>
-    <div class="item">📖 Français & Communication</div>
+  <!-- Ekran kontni prensipal la -->
+  <div class="hidden" id="home-screen">
+    <h2>Memento 9ème AF</h2>
+    <div id="memento-container">
+      <p style="text-align:center;">Chajman kesyon yo...</p>
+    </div>
   </div>
 
   <script>
+    // ⚠️ METE KONFIGIRASYON FIREBASE PA W LA LA :
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Inisyalize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     function verifyCode() {
       const code = document.getElementById('access-code').value.trim();
       if (code === "") {
-        document.getElementById('error-msg').innerText = "Svp rantre yon kòd daksè.";
+        document.getElementById('error-msg').innerText = "Svp antre yon kòd daksè.";
       } else {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('home-screen').style.display = 'block';
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('home-screen').classList.remove('hidden');
+        chajeQuestions(); // Rale kesyon yo nan Firestore
       }
+    }
+
+    function chajeQuestions() {
+      const container = document.getElementById('memento-container');
+      
+      db.collection("questions").orderBy("order").get().then((querySnapshot) => {
+        container.innerHTML = ''; // Efase mesaj chajman an
+
+        if (querySnapshot.empty) {
+          container.innerHTML = '<p style="text-align:center;">Pa gen kesyon pou kounye a.</p>';
+          return;
+        }
+
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+
+          const card = document.createElement('div');
+          card.className = 'question-card';
+
+          card.innerHTML = `
+            <div class="badge-info">
+              ${data.subject ? `<span class="subject-badge">${data.subject}</span>` : ''}
+              ${data.chapter ? `<span class="chapter-badge">${data.chapter}</span>` : ''}
+            </div>
+            <h3 class="question-title">${data.questionText || ''}</h3>
+            <p class="answer-text">${data.answerText || ''}</p>
+            
+            ${data.audioUrl && data.audioUrl.trim() !== "" ? `
+              <div class="audio-player">
+                <audio controls preload="none">
+                  <source src="${data.audioUrl}" type="audio/mpeg">
+                  Navigatè w la pa sipòte lektè audio.
+                </audio>
+              </div>
+            ` : ''}
+          `;
+
+          container.appendChild(card);
+        });
+      }).catch((error) => {
+        console.error("Erè pandan chajman done yo:", error);
+        container.innerHTML = '<p style="text-align:center; color:red;">Erè nan chaje done yo.</p>';
+      });
     }
 
     if ('serviceWorker' in navigator) {

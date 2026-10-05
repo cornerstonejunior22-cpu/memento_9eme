@@ -118,7 +118,6 @@
   </div>
 
   <script>
-    // Konfigirasyon Firebase ki korek 100%
     const firebaseConfig = {
       apiKey: "AIzaSyC7iMR4l-LiVAfyYOPWcSLFvr8mBA2KXA",
       authDomain: "memento-9eme-af.firebaseapp.com",
@@ -129,7 +128,6 @@
       measurementId: "G-3Q96R5JTH5"
     };
 
-    // Inisyalize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -140,51 +138,52 @@
       } else {
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('home-screen').classList.remove('hidden');
-        chajeQuestions(); // Rale kesyon yo nan Firestore
+        chajeQuestions();
       }
     }
 
-    function chajeQuestions() {
+    async function chajeQuestions() {
       const container = document.getElementById('memento-container');
       
-      // Nou retire .orderBy("order") pou l ka rale tout dokiman san filtre
-      db.collection("questions").get().then((querySnapshot) => {
-        container.innerHTML = ''; // Efase mesaj chajman an
+      // Li chèche ni nan 'questions' ni nan 'Questions' pou evite erè majuskil
+      let querySnapshot = await db.collection("questions").get();
+      
+      if (querySnapshot.empty) {
+        querySnapshot = await db.collection("Questions").get();
+      }
 
-        if (querySnapshot.empty) {
-          container.innerHTML = '<p style="text-align:center;">Pa gen kesyon pou kounye a.</p>';
-          return;
-        }
+      container.innerHTML = '';
 
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
+      if (querySnapshot.empty) {
+        container.innerHTML = '<p style="text-align:center;">Pa gen kesyon pou kounye a.</p>';
+        return;
+      }
 
-          const card = document.createElement('div');
-          card.className = 'question-card';
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
 
-          card.innerHTML = `
-            <div class="badge-info">
-              ${data.subject ? `<span class="subject-badge">${data.subject}</span>` : ''}
-              ${data.chapter ? `<span class="chapter-badge">${data.chapter}</span>` : ''}
+        const card = document.createElement('div');
+        card.className = 'question-card';
+
+        card.innerHTML = `
+          <div class="badge-info">
+            ${data.subject ? `<span class="subject-badge">${data.subject}</span>` : ''}
+            ${data.chapter ? `<span class="chapter-badge">${data.chapter}</span>` : ''}
+          </div>
+          <h3 class="question-title">${data.questionText || ''}</h3>
+          <p class="answer-text">${data.answerText || ''}</p>
+          
+          ${data.audioUrl && data.audioUrl.trim() !== "" ? `
+            <div class="audio-player">
+              <audio controls preload="none">
+                <source src="${data.audioUrl}" type="audio/mpeg">
+                Navigatè w la pa sipòte lektè audio.
+              </audio>
             </div>
-            <h3 class="question-title">${data.questionText || ''}</h3>
-            <p class="answer-text">${data.answerText || ''}</p>
-            
-            ${data.audioUrl && data.audioUrl.trim() !== "" ? `
-              <div class="audio-player">
-                <audio controls preload="none">
-                  <source src="${data.audioUrl}" type="audio/mpeg">
-                  Navigatè w la pa sipòte lektè audio.
-                </audio>
-              </div>
-            ` : ''}
-          `;
+          ` : ''}
+        `;
 
-          container.appendChild(card);
-        });
-      }).catch((error) => {
-        console.error("Erè pandan chajman done yo:", error);
-        container.innerHTML = '<p style="text-align:center; color:red;">Erè nan chaje done yo.</p>';
+        container.appendChild(card);
       });
     }
 
@@ -194,4 +193,3 @@
   </script>
 </body>
 </html>
-

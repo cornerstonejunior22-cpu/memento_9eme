@@ -147,7 +147,8 @@
     function chajeQuestions() {
       const container = document.getElementById('memento-container');
       
-      db.collection("questions").orderBy("order").get().then((querySnapshot) => {
+      // Nou retire .orderBy("order") pou l ka rale tout dokiman san filtre
+      db.collection("questions").get().then((querySnapshot) => {
         container.innerHTML = ''; // Efase mesaj chajman an
 
         if (querySnapshot.empty) {
@@ -193,3 +194,4 @@
   </script>
 </body>
 </html>
+

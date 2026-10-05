@@ -5,39 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Memento 9ème AF</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 16px; background-color: #f4f6f8; }
+    body { font-family: Arial, sans-serif; padding: 16px; background-color: #f4f6f8; color: #333; }
     .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 20px auto; text-align: center; }
-    h2 { color: #1b5e20; }
+    h2 { color: #1b5e20; margin-bottom: 10px; }
     input, button { width: 90%; padding: 12px; margin: 8px 0; border-radius: 8px; font-size: 16px; }
     button { background-color: #2e7d32; color: white; border: none; font-weight: bold; cursor: pointer; }
+    button:hover { background-color: #1b5e20; }
     .hidden { display: none !important; }
-    .question-card { background: #ffffff; border-radius: 10px; padding: 15px; margin: 12px 0; border-left: 5px solid #2e7d32; box-shadow: 0 2px 6px rgba(0,0,0,0.06); text-align: left; }
+    
+    .question-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 15px;
+      margin: 12px 0;
+      text-align: left;
+      border-left: 5px solid #2e7d32;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
     .badge-info { display: flex; gap: 6px; font-size: 0.75rem; margin-bottom: 6px; }
     .subject-badge { background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
     .chapter-badge { background: #fff3e0; color: #e65100; padding: 2px 8px; border-radius: 10px; }
     .question-title { font-size: 1rem; color: #1b5e20; margin: 6px 0; }
     .answer-text { font-size: 0.95rem; color: #424242; line-height: 1.4; margin-bottom: 8px; }
     .audio-player audio { width: 100%; height: 36px; margin-top: 6px; }
-    .debug-box { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 10px; border-radius: 8px; font-size: 0.85rem; text-align: left; margin-bottom: 15px; }
   </style>
 
+  <!-- Firebase Web SDK (v9 Compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
+  <!-- Ekran koneksyon -->
   <div class="card" id="login-screen">
     <h2>Memento 9ème AF</h2>
     <p>Antre kòd daksè ou pou w kòmanse</p>
     <input type="text" id="access-code" placeholder="Kòd daksè">
     <br>
     <button onclick="verifyCode()">KONEKTE</button>
+    <p id="error-msg" style="color: red; margin-top: 10px;"></p>
   </div>
 
+  <!-- Ekran prensipal -->
   <div class="hidden" id="home-screen">
     <h2>Memento 9ème AF</h2>
-    <div id="debug-info" class="debug-box">N ap kòmanse dyagnostik Firebase...</div>
-    <div id="memento-container"></div>
+    <div id="memento-container">
+      <p style="text-align:center;">Chajman kesyon yo...</p>
+    </div>
   </div>
 
   <script>
@@ -47,48 +61,42 @@
       projectId: "memento-9eme-af",
       storageBucket: "memento-9eme-af.firebasestorage.app",
       messagingSenderId: "973171461171",
-      appId: "1:973171461171:web:01d5s49fe24c632cfbe746"
+      appId: "1:973171461171:web:01d5s49fe24c632cfbe746",
+      measurementId: "G-3Q96R5JTH5"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
     function verifyCode() {
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('home-screen').classList.remove('hidden');
-      chajeQuestions();
+      const code = document.getElementById('access-code').value.trim();
+      if (code === "") {
+        document.getElementById('error-msg').innerText = "Svp antre yon kòd daksè.";
+      } else {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('home-screen').classList.remove('hidden');
+        chajeQuestions();
+      }
     }
 
     async function chajeQuestions() {
       const container = document.getElementById('memento-container');
-      const debug = document.getElementById('debug-info');
       
       try {
-        // Tès 1: Chèche nan 'questions' (tout ti lèt)
+        // Chèche nan "questions", "questions " (ak espas), ak "Questions"
         let snapshot = await db.collection("questions").get();
-        let sourceUsed = "questions (tout ti lèt)";
-
-        // Tès 2: Si l vid, chèche nan 'Questions' (Maju)
+        
+        if (snapshot.empty) {
+          snapshot = await db.collection("questions ").get();
+        }
         if (snapshot.empty) {
           snapshot = await db.collection("Questions").get();
-          sourceUsed = "Questions (ak Majuskil)";
         }
-
-        // Tès 3: Si toujou vid, chèche tout dokiman san gade non kolèksyon an (Collection Group)
-        if (snapshot.empty) {
-          snapshot = await db.collectionGroup("questions").get();
-          sourceUsed = "CollectionGroup 'questions'";
-        }
-
-        debug.innerHTML = `<strong>Rapròt dyagnostik:</strong><br>
-          • Pwojè: <code>memento-9eme-af</code><br>
-          • Kolèksyon nou jwenn: <code>${sourceUsed}</code><br>
-          • Kantite dokiman jwenn: <strong>${snapshot.size}</strong>`;
 
         container.innerHTML = '';
 
         if (snapshot.empty) {
-          container.innerHTML += '<p style="text-align:center;">Pa gen okenn kesyon nan kolèksyon sa a.</p>';
+          container.innerHTML = '<p style="text-align:center;">Pa gen kesyon pou kounye a.</p>';
           return;
         }
 
@@ -96,24 +104,37 @@
           const data = doc.data();
           const card = document.createElement('div');
           card.className = 'question-card';
+
           card.innerHTML = `
             <div class="badge-info">
               ${data.subject ? `<span class="subject-badge">${data.subject}</span>` : ''}
               ${data.chapter ? `<span class="chapter-badge">${data.chapter}</span>` : ''}
             </div>
             <h3 class="question-title">${data.questionText || doc.id}</h3>
-            <p class="answer-text">${data.answerText || 'Pa gen repons'}</p>
-            ${data.audioUrl ? `<audio controls><source src="${data.audioUrl}"></audio>` : ''}
+            <p class="answer-text">${data.answerText || 'Repons pa disponib'}</p>
+            
+            ${data.audioUrl && data.audioUrl.trim() !== "" ? `
+              <div class="audio-player">
+                <audio controls preload="none">
+                  <source src="${data.audioUrl}" type="audio/mpeg">
+                  Navigatè w la pa sipòte lektè audio.
+                </audio>
+              </div>
+            ` : ''}
           `;
+
           container.appendChild(card);
         });
 
-      } catch (err) {
-        debug.style.color = "red";
-        debug.innerHTML = `<strong>Erè nan Firestore:</strong> ${err.message}`;
+      } catch (error) {
+        console.error("Erè Firestore :", error);
+        container.innerHTML = '<p style="text-align:center; color:red;">Erè nan chaje done yo.</p>';
       }
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
     }
   </script>
 </body>
 </html>
-

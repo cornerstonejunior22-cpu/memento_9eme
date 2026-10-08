@@ -24,6 +24,8 @@
     .btn-natcash:hover { background-color: #01579b; }
     .btn-usd { background-color: #e65100; color: white; }
     .btn-usd:hover { background-color: #bf360c; }
+    .btn-owner { background-color: #37474f; color: white; margin-top: 15px; }
+    .btn-owner:hover { background-color: #212121; }
     .hidden { display: none !important; }
     
     .stats-bar {
@@ -64,6 +66,9 @@
     .ref-box {
       background: #fff8e1; border: 1px dashed #ffa000; padding: 10px; border-radius: 8px; font-size: 0.85rem; margin: 10px 0; word-break: break-all;
     }
+    .owner-banner {
+      background: #eceff1; border: 1px solid #cfd8dc; padding: 8px; border-radius: 8px; margin-bottom: 10px; font-size: 0.85rem; color: #37474f;
+    }
   </style>
 
   <!-- Firebase Web SDK (v9 Compat) -->
@@ -87,12 +92,23 @@
       <button onclick="soumettrePaiement()">MANDE DEBLOKAJ APPS LA</button>
     </div>
 
+    <!-- Espas Pwopriyetè nan Ekran Login -->
+    <hr style="margin-top: 20px; border: 0; border-top: 1px solid #eee;">
+    <button onclick="ouvrirAccesProprietaire()" class="btn-owner" style="font-size: 0.8rem; padding: 8px;">🔐 Aksè Pwopriyetè / Admin</button>
+
     <p id="error-msg" style="color: red; margin-top: 10px;"></p>
   </div>
 
   <!-- Écran principal (Debloqué) -->
   <div class="hidden" id="home-screen">
     <h2>Memento 9ème AF</h2>
+
+    <!-- Bannyè Pwopriyetè sèlman si se admin -->
+    <div id="owner-tools" class="owner-banner hidden">
+      <strong>👑 Espas Pwopriyetè Active</strong> | 
+      <a href="admin.html" style="color: #0288d1; font-weight: bold; text-decoration: none;">Ale nan Paj Administrasyon (Dashboard) &rarr;</a>
+    </div>
+
     <div class="ref-box" id="ref-share-box">
       <p style="margin:2px 0;"><strong>Lyen Parennaj ou:</strong></p>
       <small id="ref-link-text">N ap kreye lyen ou an...</small><br>
@@ -125,6 +141,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    const ADMIN_PASS = "adminmemento2026"; // Mot de pas pwopriyetè
     const urlParams = new URLSearchParams(window.location.search);
     const parentRef = urlParams.get('ref') || 'DIRECT';
 
@@ -135,6 +152,19 @@
 
     function openUSSD() {
       window.location.href = "tel:*202%23";
+    }
+
+    // Aksè Pwopriyetè
+    function ouvrirAccesProprietaire() {
+      const pass = prompt("Antre mot de pas pwopriyetè a:");
+      if (pass === ADMIN_PASS) {
+        localStorage.setItem('memento_is_owner', 'true');
+        localStorage.setItem('memento_user_phone', '34363143'); // Nimewo pwopriyetè
+        alert("Byenveni Pwopriyetè! Aplikasyon an debloke pou ou.");
+        afficherEcranDebloque(true);
+      } else if (pass !== null) {
+        alert("Mot de pas enkòrèk!");
+      }
     }
 
     async function soumettrePaiement() {
@@ -163,19 +193,34 @@
     }
 
     async function checkUserAccess() {
+      const isOwner = localStorage.getItem('memento_is_owner') === 'true';
+      if (isOwner) {
+        afficherEcranDebloque(true);
+        return;
+      }
+
       const savedPhone = localStorage.getItem('memento_user_phone');
       if (!savedPhone) return;
 
       const doc = await db.collection('users').doc(savedPhone).get();
       if (doc.exists && doc.data().status === 'active') {
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('home-screen').classList.remove('hidden');
-        
-        const myRefLink = `${window.location.origin}${window.location.pathname}?ref=${savedPhone}`;
-        document.getElementById('ref-link-text').innerText = myRefLink;
-
-        chajeQuestions();
+        afficherEcranDebloque(false);
       }
+    }
+
+    function afficherEcranDebloque(isOwner = false) {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('home-screen').classList.remove('hidden');
+
+      if (isOwner) {
+        document.getElementById('owner-tools').classList.remove('hidden');
+      }
+
+      const savedPhone = localStorage.getItem('memento_user_phone') || '34363143';
+      const myRefLink = `${window.location.origin}${window.location.pathname}?ref=${savedPhone}`;
+      document.getElementById('ref-link-text').innerText = myRefLink;
+
+      chajeQuestions();
     }
 
     function copyRefLink() {
@@ -193,7 +238,6 @@
       const stats = document.getElementById('stats-info');
       
       try {
-        // Restauration de la recherche multi-collections
         const collectionsToTry = ["questions", "Questions", "questions "];
         let allDocs = [];
         let seenIds = new Set();

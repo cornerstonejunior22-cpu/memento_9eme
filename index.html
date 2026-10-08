@@ -12,12 +12,18 @@
   <meta name="theme-color" content="#2e7d32">
 
   <style>
-    body { font-family: Arial, sans-serif; padding: 16px; background-color: #f4f6f8; color: #333; }
+    body { font-family: Arial, sans-serif; padding: 16px; background-color: #f4f6f8; color: #333; margin: 0; }
     .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 20px auto; text-align: center; }
     h2 { color: #1b5e20; margin-bottom: 10px; }
-    input, button { width: 90%; padding: 12px; margin: 8px 0; border-radius: 8px; font-size: 16px; }
+    input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
     button { background-color: #2e7d32; color: white; border: none; font-weight: bold; cursor: pointer; }
     button:hover { background-color: #1b5e20; }
+    .btn-moncash { background-color: #d32f2f; color: white; }
+    .btn-moncash:hover { background-color: #b71c1c; }
+    .btn-natcash { background-color: #0288d1; color: white; }
+    .btn-natcash:hover { background-color: #01579b; }
+    .btn-usd { background-color: #e65100; color: white; }
+    .btn-usd:hover { background-color: #bf360c; }
     .hidden { display: none !important; }
     
     .stats-bar {
@@ -40,12 +46,24 @@
       border-left: 5px solid #2e7d32;
       box-shadow: 0 2px 6px rgba(0,0,0,0.06);
     }
-    .badge-info { display: flex; gap: 6px; font-size: 0.75rem; margin-bottom: 6px; }
+    .badge-info { display: flex; gap: 6px; font-size: 0.75rem; margin-bottom: 6px; flex-wrap: wrap; }
     .subject-badge { background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
     .chapter-badge { background: #fff3e0; color: #e65100; padding: 2px 8px; border-radius: 10px; }
     .question-title { font-size: 1rem; color: #1b5e20; margin: 6px 0; }
     .answer-text { font-size: 0.95rem; color: #424242; line-height: 1.4; margin-bottom: 8px; }
     .audio-player audio { width: 100%; height: 36px; margin-top: 6px; }
+
+    /* Modal / Pop-up Styles */
+    .modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000;
+    }
+    .modal-content {
+      background: white; padding: 20px; border-radius: 12px; max-width: 350px; width: 90%; text-align: center;
+    }
+    .ref-box {
+      background: #fff8e1; border: 1px dashed #ffa000; padding: 10px; border-radius: 8px; font-size: 0.85rem; margin: 10px 0; word-break: break-all;
+    }
   </style>
 
   <!-- Firebase Web SDK (v9 Compat) -->
@@ -54,21 +72,43 @@
 </head>
 <body>
 
-  <!-- Écran de connexion -->
+  <!-- Écran de connexion / Paywall -->
   <div class="card" id="login-screen">
     <h2>Memento 9ème AF</h2>
-    <p>Antre kòd daksè ou pou w kòmanse</p>
-    <input type="text" id="access-code" placeholder="Kòd daksè">
-    <br>
-    <button onclick="verifyCode()">KONEKTE</button>
+    <p id="welcome-msg">Pou w debloke aplikasyon an nèt ak tout audio yo, peye <strong>1250 HTG</strong>.</p>
+
+    <div id="payment-box">
+      <button onclick="copyNumber('34363143', 'MonCash')" class="btn-moncash">KOPYE NIMÈWO MONCASH (34363143)</button>
+      <button onclick="copyNumber('42125630', 'Natcash')" class="btn-natcash">KOPYE NIMÈWO NATCASH (42125630)</button>
+      <button onclick="openUSSD()" class="btn-usd">RELE *202# POU VOYE KÒB LA</button>
+      
+      <p style="font-size:0.85rem; margin-top: 15px;">Lè w fin voye kòb la, antre nimewo telefòn ou ki voye peman an:</p>
+      <input type="tel" id="user-phone" placeholder="Eg: 34363143">
+      <button onclick="soumettrePaiement()">MANDE DEBLOKAJ APPS LA</button>
+    </div>
+
     <p id="error-msg" style="color: red; margin-top: 10px;"></p>
   </div>
 
-  <!-- Écran principal -->
+  <!-- Écran principal (Debloqué) -->
   <div class="hidden" id="home-screen">
     <h2>Memento 9ème AF</h2>
+    <div class="ref-box" id="ref-share-box">
+      <p style="margin:2px 0;"><strong>Lyen Parennaj ou:</strong></p>
+      <small id="ref-link-text">N ap kreye lyen ou an...</small><br>
+      <button onclick="copyRefLink()" style="padding: 6px; margin-top: 5px; font-size:0.8rem; background-color: #ffa000;">Kopye Lyen pa m</button>
+    </div>
     <div id="stats-info" class="stats-bar">N ap chaje kantite kesyon yo...</div>
     <div id="memento-container"></div>
+  </div>
+
+  <!-- Pop-up Attente -->
+  <div id="status-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Demann voye ak siksè!</h3>
+      <p>Tanpri tann pwopriyetè a debloke pou ou apre li fin konfime peman an.</p>
+      <button onclick="closeModal()">Sèten / Fèmen</button>
+    </div>
   </div>
 
   <script>
@@ -85,15 +125,67 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    function verifyCode() {
-      const code = document.getElementById('access-code').value.trim();
-      if (code === "") {
-        document.getElementById('error-msg').innerText = "Svp antre yon kòd daksè.";
-      } else {
+    const urlParams = new URLSearchParams(window.location.search);
+    const parentRef = urlParams.get('ref') || 'DIRECT';
+
+    function copyNumber(num, service) {
+      navigator.clipboard.writeText(num);
+      alert(`Nimewo ${service} a (${num}) kopye nan presse-papier ou!`);
+    }
+
+    function openUSSD() {
+      window.location.href = "tel:*202%23";
+    }
+
+    async function soumettrePaiement() {
+      const phone = document.getElementById('user-phone').value.trim();
+      const error = document.getElementById('error-msg');
+
+      if (!phone || phone.length < 8) {
+        error.innerText = "Svp antre yon nimewo telefòn ki valab.";
+        return;
+      }
+
+      try {
+        await db.collection('demandes_deblocage').doc(phone).set({
+          phone: phone,
+          parentRef: parentRef,
+          status: 'pending',
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        localStorage.setItem('memento_user_phone', phone);
+        document.getElementById('status-modal').classList.remove('hidden');
+      } catch (e) {
+        console.error(e);
+        error.innerText = "Erè nan voye demann lan.";
+      }
+    }
+
+    async function checkUserAccess() {
+      const savedPhone = localStorage.getItem('memento_user_phone');
+      if (!savedPhone) return;
+
+      const doc = await db.collection('users').doc(savedPhone).get();
+      if (doc.exists && doc.data().status === 'active') {
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('home-screen').classList.remove('hidden');
+        
+        const myRefLink = `${window.location.origin}${window.location.pathname}?ref=${savedPhone}`;
+        document.getElementById('ref-link-text').innerText = myRefLink;
+
         chajeQuestions();
       }
+    }
+
+    function copyRefLink() {
+      const link = document.getElementById('ref-link-text').innerText;
+      navigator.clipboard.writeText(link);
+      alert("Lyen parennaj ou an kopye! W ap touche 250 HTG pou chak moun ki rantre ak li.");
+    }
+
+    function closeModal() {
+      document.getElementById('status-modal').classList.add('hidden');
     }
 
     async function chajeQuestions() {
@@ -101,7 +193,7 @@
       const stats = document.getElementById('stats-info');
       
       try {
-        // Chargement simultané de toutes les collections possibles
+        // Restauration de la recherche multi-collections
         const collectionsToTry = ["questions", "Questions", "questions "];
         let allDocs = [];
         let seenIds = new Set();
@@ -167,6 +259,8 @@
         container.innerHTML = '<p style="text-align:center; color:red;">Erè nan chaje done yo.</p>';
       }
     }
+
+    checkUserAccess();
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');

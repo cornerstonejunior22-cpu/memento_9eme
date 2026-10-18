@@ -7,9 +7,9 @@
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; background-color: #f0f2f5; color: #333; margin: 0; }
     h1, h2 { color: #1b5e20; text-align: center; }
-    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 900px; margin: 20px auto; overflow-x: auto; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 1000px; margin: 20px auto; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; font-size: 14px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; font-size: 13px; }
     th { background-color: #2e7d32; color: white; }
     tr:nth-child(even) { background-color: #f9f9f9; }
     .btn-approve { background-color: #2e7d32; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
@@ -47,9 +47,9 @@
       <table>
         <thead>
           <tr>
-            <th>Nom & Prénom</th>
+            <th>Nom & Prénom (Fiyèl)</th>
             <th>Nimewo Telefòn</th>
-            <th>Kòd Parenn</th>
+            <th>Parenn (Non & Nimewo)</th>
             <th>Dat Demann</th>
             <th>Sitiyasyon</th>
             <th>Aksyon</th>
@@ -67,7 +67,7 @@
       <table>
         <thead>
           <tr>
-            <th>Nimewo Parenn</th>
+            <th>Parenn (Non & Nimewo)</th>
             <th>Fiyèl ki Peye</th>
             <th>Kòb pou Vant (HTG)</th>
             <th>Sitiyasyon Peman</th>
@@ -109,8 +109,26 @@
       }
     }
 
-    function chajeDemandes() {
-      db.collection('demandes_deblocage').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+    // Fonksyon pou chache enfòmasyon yon itilizatè (Non ak Siyati) apati nimewo telefòn li
+    async function jwennNonItilizate(phone) {
+      if (!phone || phone === 'DIRECT' || phone === '34363143') {
+        return phone === '34363143' ? 'Pwodiktè / Pwopriyetè (34363143)' : 'Dirèk (San Parenn)';
+      }
+      try {
+        const doc = await db.collection('demandes_deblocage').doc(phone).get();
+        if (doc.exists) {
+          const data = doc.data();
+          const nom = data.fullName || (data.firstName ? `${data.firstName} ${data.lastName}` : '');
+          if (nom) return `${nom} (${phone})`;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      return phone; // Si li pa jwenn non an, l ap retounen nimewo a omwen
+    }
+
+    async function chajeDemandes() {
+      db.collection('demandes_deblocage').orderBy('timestamp', 'desc').onSnapshot(async snapshot => {
         const tbody = document.getElementById('table-demandes');
         tbody.innerHTML = '';
 
@@ -119,44 +137,46 @@
           return;
         }
 
-        snapshot.forEach(doc => {
+        let rowsHTML = '';
+        for (const doc of snapshot.docs) {
           const data = doc.data();
           const phone = doc.id;
-          const fullName = data.fullName || (data.firstName ? `${data.firstName} ${data.lastName}` : 'Sanksyone');
+          const fullName = data.fullName || (data.firstName ? `${data.firstName} ${data.lastName}` : 'San Non');
           const parentRef = data.parentRef || 'DIRECT';
           const status = data.status || 'pending';
           const dateStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : '---';
 
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td><strong>${fullName}</strong></td>
-            <td>${phone}</td>
-            <td>${parentRef}</td>
-            <td>${dateStr}</td>
-            <td><span class="${status === 'active' ? 'status-active' : 'status-pending'}">${status === 'active' ? 'Debloke' : 'Anatant'}</span></td>
-            <td>
-              ${status !== 'active' ? `<button class="btn-approve" onclick="debloquerUtilisateur('${phone}', '${parentRef}')">DEBLOKE</button>` : '---'}
-            </td>
+          // Chache non parenn nan
+          const parentInfoStr = await jwennNonItilizate(parentRef);
+
+          rowsHTML += `
+            <tr>
+              <td><strong>${fullName}</strong></td>
+              <td>${phone}</td>
+              <td><span style="color: #e65100; font-weight: bold;">${parentInfoStr}</span></td>
+              <td>${dateStr}</td>
+              <td><span class="${status === 'active' ? 'status-active' : 'status-pending'}">${status === 'active' ? 'Debloke' : 'Anatant'}</span></td>
+              <td>
+                ${status !== 'active' ? `<button class="btn-approve" onclick="debloquerUtilisateur('${phone}', '${parentRef}')">DEBLOKE</button>` : '---'}
+              </td>
+            </tr>
           `;
-          tbody.appendChild(tr);
-        });
+        }
+        tbody.innerHTML = rowsHTML;
       });
     }
 
     async function debloquerUtilisateur(phone, parentRef) {
       try {
-        // 1. Debloke itilizatè a
         await db.collection('users').doc(phone).set({
           status: 'active',
           unlockedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        // 2. Mettre à jour la demande
         await db.collection('demandes_deblocage').doc(phone).update({
           status: 'active'
         });
 
-        // 3. Si itilizatè a te vini ak yon lyen parenn, anrejistre 250 HTG pou parenn nan
         if (parentRef && parentRef !== 'DIRECT') {
           await db.collection('commissions').add({
             parentPhone: parentRef,
@@ -175,7 +195,7 @@
     }
 
     function chajeCommissions() {
-      db.collection('commissions').onSnapshot(snapshot => {
+      db.collection('commissions').onSnapshot(async snapshot => {
         const tbody = document.getElementById('table-commissions');
         tbody.innerHTML = '';
 
@@ -184,20 +204,25 @@
           return;
         }
 
-        snapshot.forEach(doc => {
+        let rowsHTML = '';
+        for (const doc of snapshot.docs) {
           const data = doc.data();
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td><strong>${data.parentPhone}</strong></td>
-            <td>${data.childPhone}</td>
-            <td>${data.amount} HTG</td>
-            <td><span class="${data.status === 'paid' ? 'status-active' : 'status-pending'}">${data.status === 'paid' ? 'Peye' : 'A peye'}</span></td>
-            <td>
-              ${data.status !== 'paid' ? `<button class="btn-paid" onclick="payerCommission('${doc.id}')">MARKE PEYE</button>` : '---'}
-            </td>
+          const parentInfoStr = await jwennNonItilizate(data.parentPhone);
+          const childInfoStr = await jwennNonItilizate(data.childPhone);
+
+          rowsHTML += `
+            <tr>
+              <td><strong style="color: #e65100;">${parentInfoStr}</strong></td>
+              <td>${childInfoStr}</td>
+              <td>${data.amount} HTG</td>
+              <td><span class="${data.status === 'paid' ? 'status-active' : 'status-pending'}">${data.status === 'paid' ? 'Peye' : 'A peye'}</span></td>
+              <td>
+                ${data.status !== 'paid' ? `<button class="btn-paid" onclick="payerCommission('${doc.id}')">MARKE PEYE</button>` : '---'}
+              </td>
+            </tr>
           `;
-          tbody.appendChild(tr);
-        });
+        }
+        tbody.innerHTML = rowsHTML;
       });
     }
 

@@ -3,36 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Espace Admin - Memento 9ème AF</title>
-  
+  <title>Paj Administrasyon Memento</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 15px; background-color: #f0f2f5; color: #333; margin: 0; }
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f0f2f5; color: #333; margin: 0; }
     h1, h2 { color: #1b5e20; text-align: center; }
-    .container { max-width: 900px; margin: 0 auto; }
-    
-    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    
-    /* Tables */
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 900px; margin: 20px auto; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; font-size: 14px; }
     th { background-color: #2e7d32; color: white; }
     tr:nth-child(even) { background-color: #f9f9f9; }
-    
-    /* Buttons */
-    .btn-action { padding: 6px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
-    .btn-approve { background-color: #2e7d32; }
+    .btn-approve { background-color: #2e7d32; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
     .btn-approve:hover { background-color: #1b5e20; }
-    .btn-pay { background-color: #e65100; }
-    .btn-pay:hover { background-color: #bf360c; }
-    
-    /* Badges */
-    .badge { padding: 3px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: bold; }
-    .badge-pending { background-color: #ffe0b2; color: #e65100; }
-    .badge-active { background-color: #c8e6c9; color: #2e7d32; }
-    .badge-paid { background-color: #e1f5fe; color: #0288d1; }
-    
-    input[type="password"] { padding: 10px; width: 80%; border-radius: 6px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; }
-    .login-btn { padding: 10px 20px; background-color: #2e7d32; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .btn-paid { background-color: #0288d1; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .status-pending { color: #e65100; font-weight: bold; background: #fff3e0; padding: 4px 8px; border-radius: 4px; }
+    .status-active { color: #2e7d32; font-weight: bold; background: #e8f5e9; padding: 4px 8px; border-radius: 4px; }
+    .login-box { max-width: 350px; margin: 50px auto; text-align: center; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
+    .hidden { display: none; }
   </style>
 
   <!-- Firebase Web SDK (v9 Compat) -->
@@ -41,64 +28,56 @@
 </head>
 <body>
 
-  <div class="container">
+  <!-- Ekran Login Admin -->
+  <div id="login-screen" class="login-box">
+    <h2>Koneksyon Admin</h2>
+    <p>Antre mot de pas admin ou pou w jwenn aksè:</p>
+    <input type="password" id="admin-pass" placeholder="Mot de pas admin">
+    <button onclick="loginAdmin()" class="btn-approve" style="width:100%; padding:10px;">KONEKTE</button>
+    <p id="pass-error" style="color:red; font-size:14px; margin-top:10px;"></p>
+  </div>
+
+  <!-- Dashboard Admin -->
+  <div id="dashboard" class="hidden">
     <h1>Paj Administrasyon Memento</h1>
 
-    <!-- Ekran Seksyon Sekirite Admin -->
-    <div class="card" id="admin-login-card" style="text-align: center;">
-      <h2>Koneksyon Admin</h2>
-      <p>Antre mot de pas admin ou pou w jwenn aksè:</p>
-      <input type="password" id="admin-pass" placeholder="Mot de pas admin">
-      <br>
-      <button onclick="checkAdminPass()" class="login-btn">KONEKTE</button>
-      <p id="auth-error" style="color: red; margin-top: 10px;"></p>
+    <!-- Tablo 1: Demann Deblokaj -->
+    <div class="card">
+      <h2>1. Demann Deblokaj (1250 HTG)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Nom & Prénom</th>
+            <th>Nimewo Telefòn</th>
+            <th>Kòd Parenn</th>
+            <th>Dat Demann</th>
+            <th>Sitiyasyon</th>
+            <th>Aksyon</th>
+          </tr>
+        </thead>
+        <tbody id="table-demandes">
+          <tr><td colspan="6">N ap chaje demann yo...</td></tr>
+        </tbody>
+      </table>
     </div>
 
-    <!-- Kontni Admin (Kache pa defo) -->
-    <div id="admin-dashboard" class="hidden" style="display:none;">
-
-      <!-- 1. Demann Deblokaj yo -->
-      <div class="card">
-        <h2>1. Demann Deblokaj (1250 HTG)</h2>
-        <div style="overflow-x:auto;">
-          <table>
-            <thead>
-              <tr>
-                <th>Nimewo Telefòn</th>
-                <th>Kòd Parenn</th>
-                <th>Dat Demann</th>
-                <th>Sitiyasyon</th>
-                <th>Aksyon</th>
-              </tr>
-            </thead>
-            <tbody id="requests-list">
-              <tr><td colspan="5" style="text-align:center;">N ap chaje demann yo...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- 2. Lis Komisyon Parennaj pou Peye -->
-      <div class="card">
-        <h2>2. Swivi Komisyon Parenn yo (250 HTG / Moun)</h2>
-        <div style="overflow-x:auto;">
-          <table>
-            <thead>
-              <tr>
-                <th>Nimewo Parenn</th>
-                <th>Fiyèl ki Peye</th>
-                <th>Kòb pou Vant (HTG)</th>
-                <th>Sitiyasyon Peman</th>
-                <th>Aksyon</th>
-              </tr>
-            </thead>
-            <tbody id="referrals-list">
-              <tr><td colspan="5" style="text-align:center;">N ap chaje lis parenn yo...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
+    <!-- Tablo 2: Swivi Komisyon Parenn -->
+    <div class="card">
+      <h2>2. Swivi Komisyon Parenn yo (250 HTG / Moun)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Nimewo Parenn</th>
+            <th>Fiyèl ki Peye</th>
+            <th>Kòb pou Vant (HTG)</th>
+            <th>Sitiyasyon Peman</th>
+            <th>Aksyon</th>
+          </tr>
+        </thead>
+        <tbody id="table-commissions">
+          <tr><td colspan="5">N ap chaje komisyon yo...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -116,53 +95,47 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Ou ka chanje mot de pas sa a jan w vle
-    const ADMIN_PASSWORD = "adminmemento2026"; 
+    const ADMIN_PASSWORD = "adminmemento2026";
 
-    function checkAdminPass() {
-      const inputPass = document.getElementById('admin-pass').value.trim();
-      if (inputPass === ADMIN_PASSWORD) {
-        document.getElementById('admin-login-card').style.display = 'none';
-        document.getElementById('admin-dashboard').style.display = 'block';
-        chajeDemannyo();
-        chajeParennyo();
+    function loginAdmin() {
+      const pass = document.getElementById('admin-pass').value;
+      if (pass === ADMIN_PASSWORD) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+        chajeDemandes();
+        chajeCommissions();
       } else {
-        document.getElementById('auth-error').innerText = "Mot de pas sa a pa bon!";
+        document.getElementById('pass-error').innerText = "Mot de pas sa a pa bon!";
       }
     }
 
-    // 1. Chaje tout demann deblokaj yo
-    function chajeDemannyo() {
+    function chajeDemandes() {
       db.collection('demandes_deblocage').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
-        const tbody = document.getElementById('requests-list');
+        const tbody = document.getElementById('table-demandes');
         tbody.innerHTML = '';
 
         if (snapshot.empty) {
-          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Pa gen okenn demann pou kounye a.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6">Pa gen okenn demann anantant.</td></tr>';
           return;
         }
 
         snapshot.forEach(doc => {
           const data = doc.data();
-          const tr = document.createElement('tr');
-          const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString('ht-HT') : 'N/A';
-          const isPending = data.status === 'pending';
+          const phone = doc.id;
+          const fullName = data.fullName || (data.firstName ? `${data.firstName} ${data.lastName}` : 'Sanksyone');
+          const parentRef = data.parentRef || 'DIRECT';
+          const status = data.status || 'pending';
+          const dateStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : '---';
 
+          const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td><strong>${data.phone}</strong></td>
-            <td>${data.parentRef || 'DIRECT'}</td>
-            <td>${date}</td>
+            <td><strong>${fullName}</strong></td>
+            <td>${phone}</td>
+            <td>${parentRef}</td>
+            <td>${dateStr}</td>
+            <td><span class="${status === 'active' ? 'status-active' : 'status-pending'}">${status === 'active' ? 'Debloke' : 'Anatant'}</span></td>
             <td>
-              <span class="badge ${isPending ? 'badge-pending' : 'badge-active'}">
-                ${isPending ? 'Anatant' : 'Debloke'}
-              </span>
-            </td>
-            <td>
-              ${isPending ? `
-                <button class="btn-action btn-approve" onclick="debloquerUtilisateur('${data.phone}', '${data.parentRef}')">
-                  DEBLOKE
-                </button>
-              ` : '---'}
+              ${status !== 'active' ? `<button class="btn-approve" onclick="debloquerUtilisateur('${phone}', '${parentRef}')">DEBLOKE</button>` : '---'}
             </td>
           `;
           tbody.appendChild(tr);
@@ -170,71 +143,57 @@
       });
     }
 
-    // Fonction pou debloke yon itilizatè
     async function debloquerUtilisateur(phone, parentRef) {
-      if (!confirm(`Èske w konfime w resevwa 1250 HTG nan men ${phone}?`)) return;
-
       try {
-        // Active itilizatè a
+        // 1. Debloke itilizatè a
         await db.collection('users').doc(phone).set({
           status: 'active',
           unlockedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        }, { merge: true });
 
-        // Met a jou demann lan
+        // 2. Mettre à jour la demande
         await db.collection('demandes_deblocage').doc(phone).update({
-          status: 'approved'
+          status: 'active'
         });
 
-        // Si itilizatè a te pase pa yon lyen parennaj, anrejistre komisyon pou parenn nan
+        // 3. Si itilizatè a te vini ak yon lyen parenn, anrejistre 250 HTG pou parenn nan
         if (parentRef && parentRef !== 'DIRECT') {
           await db.collection('commissions').add({
             parentPhone: parentRef,
             childPhone: phone,
             amount: 250,
-            status: 'unpaid', // unpaid / paid
+            status: 'unpaid',
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
           });
         }
 
-        alert(`Aksè ${phone} debloke ak siksè!`);
-      } catch (error) {
-        console.error("Erè:", error);
-        alert("Gen yon erè ki rive pandan deblokaj la.");
+        alert(`Utilisateur ${phone} debloke ak siksè!`);
+      } catch (e) {
+        console.error("Erreur deblocage:", e);
+        alert("Erè nan deblokaj la.");
       }
     }
 
-    // 2. Chaje lis komisyon parenn yo pou voye kòb yo
-    function chajeParennyo() {
-      db.collection('commissions').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
-        const tbody = document.getElementById('referrals-list');
+    function chajeCommissions() {
+      db.collection('commissions').onSnapshot(snapshot => {
+        const tbody = document.getElementById('table-commissions');
         tbody.innerHTML = '';
 
         if (snapshot.empty) {
-          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Pa gen okenn komisyon parennaj anrejistre.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="5">Pa gen okenn komisyon parennaj anrejistre.</td></tr>';
           return;
         }
 
         snapshot.forEach(doc => {
           const data = doc.data();
           const tr = document.createElement('tr');
-          const isUnpaid = data.status === 'unpaid';
-
           tr.innerHTML = `
             <td><strong>${data.parentPhone}</strong></td>
             <td>${data.childPhone}</td>
-            <td><strong>${data.amount} HTG</strong></td>
+            <td>${data.amount} HTG</td>
+            <td><span class="${data.status === 'paid' ? 'status-active' : 'status-pending'}">${data.status === 'paid' ? 'Peye' : 'A peye'}</span></td>
             <td>
-              <span class="badge ${isUnpaid ? 'badge-pending' : 'badge-paid'}">
-                ${isUnpaid ? 'A peye' : 'Peye deja'}
-              </span>
-            </td>
-            <td>
-              ${isUnpaid ? `
-                <button class="btn-action btn-pay" onclick="marquerCommePaye('${doc.id}', '${data.parentPhone}',${data.amount})">
-                  MARKE PEYE
-                </button>
-              ` : '---'}
+              ${data.status !== 'paid' ? `<button class="btn-paid" onclick="payerCommission('${doc.id}')">MARKE PEYE</button>` : '---'}
             </td>
           `;
           tbody.appendChild(tr);
@@ -242,19 +201,14 @@
       });
     }
 
-    // Marke komisyon an kòm peye apre w fin voye 250 HTG a pa MonCash/Natcash
-    async function marquerCommePaye(docId, parentPhone, amount) {
-      if (!confirm(`Èske w fin voye ${amount} HTG bay parenn sa a (${parentPhone})?`)) return;
-
+    async function payerCommission(docId) {
       try {
         await db.collection('commissions').doc(docId).update({
-          status: 'paid',
-          paidAt: firebase.firestore.FieldValue.serverTimestamp()
+          status: 'paid'
         });
-        alert("Peman kòmande a anrejistre kòm peye!");
-      } catch (error) {
-        console.error("Erè:", error);
-        alert("Erè nan mizajou an.");
+        alert("Komisyon anrejistre kòm peye!");
+      } catch (e) {
+        console.error(e);
       }
     }
   </script>

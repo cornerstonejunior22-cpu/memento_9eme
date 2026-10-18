@@ -16,6 +16,8 @@
     .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 20px auto; text-align: center; }
     h2 { color: #1b5e20; margin-bottom: 10px; }
     input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
+    input { border: 1px solid #ccc; outline: none; }
+    input:focus { border-color: #2e7d32; }
     button { background-color: #2e7d32; color: white; border: none; font-weight: bold; cursor: pointer; }
     button:hover { background-color: #1b5e20; }
     .btn-moncash { background-color: #d32f2f; color: white; }
@@ -87,8 +89,10 @@
       <button onclick="copyNumber('42125630', 'Natcash')" class="btn-natcash">KOPYE NIMÈWO NATCASH (42125630)</button>
       <button onclick="openUSSD()" class="btn-usd">RELE *202# POU VOYE KÒB LA</button>
       
-      <p style="font-size:0.85rem; margin-top: 15px;">Lè w fin voye kòb la, antre nimewo telefòn ou ki voye peman an:</p>
-      <input type="tel" id="user-phone" placeholder="Eg: 34363143">
+      <p style="font-size:0.85rem; margin-top: 15px; font-weight: bold; text-align: left;">Ranpli enfòmasyon ou yo apre peman an:</p>
+      <input type="text" id="user-firstname" placeholder="Siyati ou">
+      <input type="text" id="user-lastname" placeholder="Non ou">
+      <input type="tel" id="user-phone" placeholder="Antre nimewo ou te voye kòb la">
       <button onclick="soumettrePaiement()">MANDE DEBLOKAJ APPS LA</button>
     </div>
 
@@ -168,8 +172,15 @@
     }
 
     async function soumettrePaiement() {
+      const firstName = document.getElementById('user-firstname').value.trim();
+      const lastName = document.getElementById('user-lastname').value.trim();
       const phone = document.getElementById('user-phone').value.trim();
       const error = document.getElementById('error-msg');
+
+      if (!firstName || !lastName) {
+        error.innerText = "Svp antre nom ou ak siyati ou.";
+        return;
+      }
 
       if (!phone || phone.length < 8) {
         error.innerText = "Svp antre yon nimewo telefòn ki valab.";
@@ -178,6 +189,9 @@
 
       try {
         await db.collection('demandes_deblocage').doc(phone).set({
+          firstName: firstName,
+          lastName: lastName,
+          fullName: `${firstName} ${lastName}`,
           phone: phone,
           parentRef: parentRef,
           status: 'pending',

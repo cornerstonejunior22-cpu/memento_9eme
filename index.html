@@ -71,6 +71,32 @@
     .owner-banner {
       background: #eceff1; border: 1px solid #cfd8dc; padding: 8px; border-radius: 8px; margin-bottom: 10px; font-size: 0.85rem; color: #37474f;
     }
+
+    /* Style pou Audio Jeneral anba nèt */
+    .full-audio-card {
+      background: #e8f5e9;
+      border: 2px solid #2e7d32;
+      border-radius: 12px;
+      padding: 18px;
+      margin: 25px 0 15px 0;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
+    }
+    .full-audio-card h3 {
+      color: #1b5e20;
+      margin-top: 0;
+      margin-bottom: 6px;
+      font-size: 1.1rem;
+    }
+    .full-audio-card p {
+      font-size: 0.85rem;
+      color: #333;
+      margin-bottom: 12px;
+    }
+    .full-audio-card audio {
+      width: 100%;
+      height: 42px;
+    }
   </style>
 
   <!-- Firebase Web SDK (v9 Compat) -->
@@ -119,7 +145,21 @@
       <button onclick="copyRefLink()" style="padding: 6px; margin-top: 5px; font-size:0.8rem; background-color: #ffa000;">Kopye Lyen pa m</button>
     </div>
     <div id="stats-info" class="stats-bar">N ap chaje kantite kesyon yo...</div>
+    
+    <!-- Espas kote tout kesyon yo ap afiche -->
     <div id="memento-container"></div>
+
+    <!-- AUDIO KONPLÈ (175 KESYON) ANBA NÈT -->
+    <div class="full-audio-card">
+      <h3>🎧 Audio Konplè Memento (175 Kesyon / Repons)</h3>
+      <p>Koute tout 175 kesyon ak repons yo san prensip an antye (22 minit):</p>
+      <div class="audio-player">
+        <audio controls preload="none">
+          <source src="https://archive.org/download/memento_175_questions/memento_175_questions.mp3" type="audio/mpeg">
+          Navigatè w la pa sipòte lektè audio.
+        </audio>
+      </div>
+    </div>
   </div>
 
   <!-- Pop-up Attente -->

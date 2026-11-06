@@ -111,7 +111,7 @@
     <p id="welcome-msg">Pou w debloke aplikasyon an nèt ak tout audio yo, peye <strong>1250 HTG</strong>.</p>
 
     <div id="payment-box">
-      <button onclick="copyNumber('34363143', 'MonCash')" class="btn-moncash">KOPYE NIMÈWO MONCASH (34363143)</button>
+      <button onclick="copyNumber('38258915', 'MonCash')" class="btn-moncash">KOPYE NIMÈWO MONCASH (38258915)</button>
       <button onclick="copyNumber('42125630', 'Natcash')" class="btn-natcash">KOPYE NIMÈWO NATCASH (42125630)</button>
       <button onclick="openUSSD()" class="btn-usd">RELE *202# POU VOYE KÒB LA</button>
       
@@ -203,7 +203,7 @@
       const pass = prompt("Antre mot de pas pwopriyetè a:");
       if (pass === ADMIN_PASS) {
         localStorage.setItem('memento_is_owner', 'true');
-        localStorage.setItem('memento_user_phone', '34363143'); // Nimewo pwopriyetè
+        localStorage.setItem('memento_user_phone', '38258915'); // Nimewo pwopriyetè
         alert("Byenveni Pwopriyetè! Aplikasyon an debloke pou ou.");
         afficherEcranDebloque(true);
       } else if (pass !== null) {
@@ -270,7 +270,7 @@
         document.getElementById('owner-tools').classList.remove('hidden');
       }
 
-      const savedPhone = localStorage.getItem('memento_user_phone') || '34363143';
+      const savedPhone = localStorage.getItem('memento_user_phone') || '38258915';
       const myRefLink = `${window.location.origin}${window.location.pathname}?ref=${savedPhone}`;
       document.getElementById('ref-link-text').innerText = myRefLink;
 
